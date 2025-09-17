@@ -1,0 +1,333 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgriConnect — Dashboard</title>
+  <!-- Chart.js for charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#16a34a; --muted:#94a3b8; --glass: rgba(255,255,255,0.03);
+      --card-radius:14px; --gap:18px; --max-width:1200px;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#071021 0%, #071726 100%);color:#e6eef8;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:28px}
+    .wrap{width:100%;max-width:var(--max-width)}header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.logo{display:flex;align-items:center;gap:12px}
+.brand{font-weight:700;font-size:18px}
+.sub{color:var(--muted);font-size:13px}
+
+.grid{display:grid;grid-template-columns:300px 1fr;gap:var(--gap)}
+/* Sidebar */
+aside{background:var(--card);padding:18px;border-radius:var(--card-radius);min-height:520px}
+.profile{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.avatar{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#0ea5a4,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700}
+nav a{display:block;padding:8px 10px;border-radius:8px;color:var(--muted);text-decoration:none;margin-bottom:6px}
+nav a.active{background:linear-gradient(90deg, rgba(22,163,74,0.12), rgba(7,10,15,0.12));color:#c9f7d7}
+
+/* Main */
+main{display:flex;flex-direction:column;gap:var(--gap)}
+.row{display:flex;gap:var(--gap)}
+.card{background:var(--glass);padding:16px;border-radius:12px;backdrop-filter: blur(6px);box-shadow: 0 6px 18px rgba(2,6,23,0.6)}
+.card.h{height:220px}
+.card.wide{flex:1}
+
+.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.small{font-size:13px;color:var(--muted)}
+
+/* tables */
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px}
+th{color:var(--muted);font-weight:600}
+.price-up{color:#86efac;font-weight:700}
+.price-down{color:#ff9a9a;font-weight:700}
+
+/* marketplace */
+.market{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.market-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:12px;border-radius:10px}
+.btn{background:var(--accent);color:#042014;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+
+footer{color:var(--muted);font-size:13px;margin-top:12px}
+
+/* responsive */
+@media (max-width:900px){.grid{grid-template-columns:1fr;}.card.h{height:auto}}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="6" fill="#05282A"/><path d="M6 14c1.333-4 6-6 8-6s4 2 4 6" stroke="#16A34A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10c2-3 6-4 8-4s4 1 4 4" stroke="#06B6D4" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <div class="brand">AgriConnect</div>
+          <div class="sub">Live weather · Soil IoT · Prices · Marketplace</div>
+        </div>
+      </div>
+      <div style="margin-left:auto;color:var(--muted);font-size:13px">Quick demo — mock data & simulated IoT</div>
+    </header><div class="grid">
+  <aside class="card">
+    <div class="profile">
+      <div class="avatar">A</div>
+      <div>
+        <div style="font-weight:700">Admin</div>
+        <div class="small">Farmers connected: <strong id="farmersCount">142</strong></div>
+      </div>
+    </div>
+    <nav>
+      <a href="#" class="active">Overview</a>
+      <a href="#">Weather Alerts</a>
+      <a href="#">Soil Sensors</a>
+      <a href="#">Prices</a>
+      <a href="#">Marketplace</a>
+      <a href="#">Settings</a>
+    </nav>
+
+    <hr style="border:none;height:1px;background:rgba(255,255,255,0.03);margin:12px 0">
+    <div class="small">Quick actions</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn" onclick="simulateAlert()">Simulate Alert</button>
+      <button class="btn ghost" onclick="downloadCSV()">Export Prices</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- Top row: Alerts + Soil -->
+    <div class="row">
+      <div class="card h" style="width:360px">
+        <div class="section-title"><div><strong>Live Weather Alerts</strong><div class="small">Auto-updated</div></div><div id="alertsCount" class="small">0 alerts</div></div>
+        <div id="alertsList" style="display:flex;flex-direction:column;gap:8px;max-height:140px;overflow:auto;padding-right:6px">
+          <!-- alerts inserted here -->
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+          <div class="small">Source: Weather API / local stations</div>
+          <div class="small">Last update: <span id="lastUpdate">--</span></div>
+        </div>
+      </div>
+
+      <div class="card wide h">
+        <div class="section-title"><div><strong>Soil Health (IoT)</strong><div class="small">Sensor network live stream</div></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <div class="small">Plot</div>
+            <select id="sensorSelect" onchange="changeSensor()" class="small" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04);padding:6px;border-radius:8px">
+              <!-- options generated -->
+            </select>
+          </div>
+        </div>
+        <canvas id="soilChart" style="max-height:200px"></canvas>
+      </div>
+    </div>
+
+    <!-- Middle row: Prices + marketplace -->
+    <div class="row">
+      <div class="card wide">
+        <div class="section-title"><div><strong>Crop Price Tracking</strong><div class="small">Local markets · trends</div></div>
+          <div style="display:flex;gap:8px;align-items:center"><input id="priceSearch" placeholder="Search crop" style="background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px;border-radius:8px;color:var(--muted)" oninput="renderPrices()"/></div>
+        </div>
+        <div style="overflow:auto;max-height:260px">
+          <table id="pricesTable">
+            <thead><tr><th>Crop</th><th>Market</th><th>Price/kg</th><th>Change</th><th>Last</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="width:320px">
+        <div class="section-title"><div><strong>Direct Farmer → Buyer</strong><div class="small">Marketplace</div></div></div>
+        <div class="market" id="marketplace">
+          <!-- cards -->
+        </div>
+      </div>
+    </div>
+
+    <footer>Tip: Replace mock endpoints with your real APIs. See comments in the code for integration notes.</footer>
+  </main>
+</div>
+
+  </div>  <!-- Modals and templates -->  <div id="modal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.6)"> 
+    <div style="background:#041018;padding:18px;border-radius:12px;min-width:320px;max-width:92%;box-shadow:0 8px 24px rgba(0,0,0,0.6)">
+      <div id="modalContent"></div>
+      <div style="text-align:right;margin-top:12px"><button class="btn ghost" onclick="closeModal()">Close</button></div>
+    </div>
+  </div>  <script>
+    /**
+     * AgriConnect — single-file dashboard demo
+     * - Replace mock data and simulated websocket with your real APIs:
+     *   - Weather: call a weather API (OpenWeatherMap, Meteomatics, etc.) and push alerts
+     *   - Soil IoT: connect MQTT over WebSocket, e.g. using mqtt.js at the frontend or through your backend
+     *   - Prices: use your market-price feed; store historicals in DB and feed trend data to charts
+     *   - Marketplace: integrate contact details / buyer negotiation flows
+     */
+
+    // ---- Mock data ----
+    const sensors = [
+      {id:'plot-1', name:'North Field'},
+      {id:'plot-2', name:'East Orchard'},
+      {id:'plot-3', name:'Riverbank'}
+    ];
+
+    const prices = [
+      {crop:'Rice', market:'Hyderabad', price:28, change:+0.7, last:'2025-09-16'},
+      {crop:'Wheat', market:'Amaravati', price:25, change:-0.4, last:'2025-09-16'},
+      {crop:'Tomato', market:'Secunderabad', price:32, change:+3.1, last:'2025-09-17'},
+      {crop:'Onion', market:'Nizamabad', price:18, change:-1.1, last:'2025-09-16'},
+      {crop:'Groundnut', market:'Anantapur', price:75, change:+0.5, last:'2025-09-15'},
+    ];
+
+    const marketList = [
+      {farmer:'Raju', crop:'Organic Tomato', qty:'500 kg', price:'31/kg', location:'Medak'},
+      {farmer:'Latha', crop:'Sona Masuri Rice', qty:'1,200 kg', price:'27/kg', location:'Nalgonda'},
+      {farmer:'Suresh', crop:'Groundnut', qty:'400 kg', price:'74/kg', location:'Kurnool'},
+    ];
+
+    // ---- DOM refs ----
+    const alertsList = document.getElementById('alertsList');
+    const alertsCount = document.getElementById('alertsCount');
+    const lastUpdate = document.getElementById('lastUpdate');
+    const sensorSelect = document.getElementById('sensorSelect');
+    const farmersCount = document.getElementById('farmersCount');
+
+    // populate sensors
+    sensors.forEach(s => {
+      const opt = document.createElement('option'); opt.value = s.id; opt.textContent = s.name; sensorSelect.appendChild(opt);
+    });
+
+    // ---- Soil Chart (Chart.js) ----
+    const soilCtx = document.getElementById('soilChart').getContext('2d');
+    const soilData = {labels:[], datasets:[{label:'Moisture (%)',data:[],tension:0.3,yAxisID:'y'}, {label:'pH',data:[],tension:0.3,yAxisID:'y1'}]};
+    const soilChart = new Chart(soilCtx,{
+      type:'line',data:soilData,options:{responsive:true,interaction:{mode:'index',intersect:false},scales:{y:{type:'linear',position:'left',min:0,max:100},y1:{type:'linear',position:'right',min:3,max:10}}}
+    });
+
+    function pushSoilSample(sensorId, moisture, pH){
+      const time = new Date().toLocaleTimeString();
+      // keep only last 20
+      if(soilData.labels.length>20){soilData.labels.shift(); soilData.datasets[0].data.shift(); soilData.datasets[1].data.shift();}
+      soilData.labels.push(time); soilData.datasets[0].data.push(moisture); soilData.datasets[1].data.push(pH); soilChart.update();
+    }
+
+    // initial simulated values
+    for(let i=6;i>=0;i--){ pushSoilSample(sensors[0].id, 45+Math.round(Math.random()*20), 6 + Math.random().toFixed(2)); }
+
+    // ---- Price rendering ----
+    function renderPrices(){
+      const tbody = document.querySelector('#pricesTable tbody'); tbody.innerHTML='';
+      const q = document.getElementById('priceSearch').value.trim().toLowerCase();
+      prices.filter(p=>p.crop.toLowerCase().includes(q)||p.market.toLowerCase().includes(q)).forEach(row=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${row.crop}</td><td>${row.market}</td><td>₹ ${row.price}</td><td class='${row.change>=0?"price-up":"price-down"}'>${row.change>=0?"+":""}${row.change}%</td><td>${row.last}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ---- Marketplace ----
+    function renderMarketplace(){
+      const m = document.getElementById('marketplace'); m.innerHTML='';
+      marketList.forEach(item=>{
+        const d = document.createElement('div'); d.className='market-card';
+        d.innerHTML = `<div style="font-weight:700">${item.crop}</div><div class="small">Farmer: ${item.farmer}</div><div class="small">Qty: ${item.qty} · ${item.location}</div><div style="margin-top:8px;display:flex;gap:8px"><button class='btn' onclick='contact("${item.farmer}", "${item.crop}")'>Contact</button><button class='btn ghost' onclick='showModal("${item.crop}", "${item.farmer}")'>Details</button></div>`;
+        m.appendChild(d);
+      });
+    }
+
+    function contact(farmer,crop){
+      alert(`Open a chat / call flow to contact ${farmer} about ${crop}. Integrate SMS/WhatsApp/in-app chat.`);
+    }
+
+    function showModal(crop, farmer){
+      const modal = document.getElementById('modal'); modal.style.display='flex';
+      document.getElementById('modalContent').innerHTML = `<div style='font-weight:700;margin-bottom:8px'>${crop}</div><div class='small'>Farmer: ${farmer}</div><div class='small' style='margin-top:8px'>This area can show certificates (organic), photos, negotiation history, logistics options.</div>`;
+    }
+    function closeModal(){document.getElementById('modal').style.display='none'}
+
+    // ---- Alerts simulation & handling ----
+    let alerts = [];
+    function addAlert(type, message, severity='info'){
+      const id = Math.random().toString(36).slice(2,9);
+      const a = {id,type,message,severity,time:new Date()}; alerts.unshift(a); if(alerts.length>10)alerts.pop();
+      renderAlerts();
+    }
+    function renderAlerts(){
+      alertsList.innerHTML=''; alerts.forEach(a=>{
+        const el = document.createElement('div'); el.style.padding='8px'; el.style.borderRadius='8px'; el.style.background = a.severity==='critical'? 'linear-gradient(90deg, rgba(255,80,80,0.07), transparent)':'transparent';
+        el.innerHTML = `<div style='display:flex;justify-content:space-between;align-items:center'><div><strong style='font-size:13px'>${a.type}</strong><div class='small' style='margin-top:4px'>${a.message}</div></div><div class='small'>${a.time.toLocaleTimeString()}</div></div>`;
+        alertsList.appendChild(el);
+      });
+      alertsCount.textContent = `${alerts.length} alert${alerts.length!==1?'s':''}`;
+      lastUpdate.textContent = new Date().toLocaleString();
+    }
+
+    function simulateAlert(){
+      const types = ['Frost Warning','Heavy Rain','High Wind','Heat Advisory','Pest Outbreak'];
+      const type = types[Math.floor(Math.random()*types.length)];
+      const sev = Math.random()>0.7? 'critical':'info';
+      addAlert(type, `Auto-generated: ${type} affecting nearby plots.`, sev);
+    }
+
+    // ---- CSV export ----
+    function downloadCSV(){
+      const rows = [['Crop','Market','Price/kg','Change','Last']].concat(prices.map(p=>[p.crop,p.market,p.price,p.change,p.last]));
+      const csv = rows.map(r=>r.join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='crop_prices.csv'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    // ---- Sensor selection ----
+    function changeSensor(){
+      // when user selects a different plot, clear chart and seed with new values
+      soilData.labels = []; soilData.datasets[0].data=[]; soilData.datasets[1].data=[];
+      for(let i=6;i>=0;i--){ pushSoilSample(sensorSelect.value, 40+Math.round(Math.random()*30), 5.2 + Math.random()*1.6); }
+    }
+
+    // ---- Simulated realtime updates (replace with WebSocket/MQTT in production) ----
+    setInterval(()=>{
+      // every 6s new soil sample for current sensor
+      const moisture = Math.round(30 + Math.random()*50);
+      const pH = (5 + Math.random()*2.4).toFixed(2);
+      pushSoilSample(sensorSelect.value, moisture, pH);
+
+      // random minor price movement
+      if(Math.random()>0.6){
+        const idx = Math.floor(Math.random()*prices.length); const delta = (Math.random()*2-1).toFixed(1);
+        prices[idx].price = Math.max(5, Math.round((prices[idx].price + parseFloat(delta))*100)/100);
+        prices[idx].change = Math.round(((parseFloat(prices[idx].change)+parseFloat(delta))*10))/10;
+        renderPrices();
+      }
+
+      // random occasional alert
+      if(Math.random()>0.87){ simulateAlert(); }
+    },6000);
+
+    // initial render
+    renderPrices(); renderMarketplace(); renderAlerts();
+
+    // seed a gentle alert to show UI
+    addAlert('Info','System started — demo data loaded.','info');
+
+    // ---- Integration notes (placeholders) ----
+    /*
+      To connect real IoT sensors:
+        - Option A (recommended): Have sensors publish to an MQTT broker. Use a backend service to subscribe and forward sanitized websocket events to this dashboard (e.g., /ws/sensors) for multi-tenant authorization.
+        - Option B (direct front-end): use mqtt.js in browser with wss:// endpoint (requires CORS and secure credentials). Be careful about exposing secrets in frontend.
+
+      To fetch weather alerts:
+        - Subscribe to a weather alerts API (e.g., OpenWeatherMap OneCall or a government meteorological feed) and normalize alert severity.
+
+      To integrate crop prices and marketplace:
+        - Build REST endpoints: GET /prices, POST /marketplace/contact, GET /sensors/{id}/history
+        - Use authentication (JWT) and role-based access (farmer, buyer, admin)
+
+      Security & scale:
+        - Throttle updates, validate all sensor inputs at the backend, sign messages if you allow direct web sockets.
+        - Store historical timeseries in TSDB (InfluxDB/Timescale) for analytics.
+    */
+
+  </script>
+  </body>
+</html>
